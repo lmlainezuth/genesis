@@ -203,7 +203,7 @@
     <div class="big-emoji">🌸</div>
     <div class="pretitle">Estudio independiente · 2026</div>
     <h1>Encuesta científica de carácter completamente neutral</h1>
-    <p class="sub">Esto es técnicamente una encuesta. En la práctica… ya lo irás viendo. Sigue.</p>
+    <p class="sub">Esto es técnicamente una encuesta. En la práctica… ya lo irá viendo. Siga.</p>
     <button class="btn" onclick="next()">Empezar</button>
     <div class="footnote">Tiempo estimado: menos de lo que tarda este chiste en envejecer.</div>
   </div>
@@ -256,7 +256,7 @@
   <div class="screen" data-step="4">
     <div class="big-emoji">☕</div>
     <div class="pretitle">Pregunta 4 de 4</div>
-    <h2>¿Aceptaría salir conmigo? ☕🍔</h2>
+    <h2>¿Aceptaría ir por un café o comer algo conmigo? ☕🍔</h2>
     <div class="options" data-q="q4_aceptaria_cafe">
       <label class="opt"><input type="radio" name="q4" value="Sí"><span class="dot"></span>Sí</label>
       <label class="opt"><input type="radio" name="q4" value="Suena bien"><span class="dot"></span>Suena bien</label>
@@ -270,11 +270,10 @@
   <!-- RESULTADO -->
   <div class="screen" data-step="5">
     <div class="result-emoji" id="rEmoji">📊</div>
-    <h2 style="text-align:center" id="rTitle">Resultados del estudio</h2>
-    <p class="sub" style="text-align:center">Procesados por un comité científico de una sola persona.</p>
+    <h2 style="text-align:center" id="rTitle"></h2>
     <p class="result-text" id="rText"></p>
     <div class="summary" id="rSummary"></div>
-    <button class="btn" onclick="location.reload()">Repetir el experimento</button>
+    <button class="btn" onclick="location.reload()">Volver a empezar</button>
   </div>
 
   <div class="err" id="err"></div>
@@ -403,21 +402,21 @@ function mostrarResultado() {
   if (positivas >= 3) {
     lanzarConfetti();
     emoji.textContent = '🌹';
-    title.textContent = 'Hipótesis confirmada';
-    text.innerHTML = `Con <strong>${positivas} de 4</strong> respuestas positivas, el comité declara oficialmente esto como <strong>una invitación a salir</strong>. La pelota está en tu cancha, Génesis. ☕`;
+    title.textContent = 'Entonces…';
+    text.innerHTML = `Génesis, lo de la encuesta era una excusa. La pregunta de verdad era la última. <br><br>Si le apetece, la invito a un café o a comer algo cuando guste. ☕ Usted dígame cuándo.`;
   } else if (positivas === 2) {
     lanzarConfetti(40);
-    emoji.textContent = '🤔';
-    title.textContent = 'Resultados inconclusos';
-    text.innerHTML = `<strong>${positivas} de 4</strong>. El estudio no es concluyente, pero tampoco lo descarta. Acepto el "tal vez" como un sí con trámite pendiente.`;
+    emoji.textContent = '🙂';
+    title.textContent = 'Me lo tomo como un "ya veremos"';
+    text.innerHTML = `Ni un sí ni un no. Acepto el "tal vez" sin problema. <br><br>Si en algún momento le apetece un café, aquí estoy. ☕`;
   } else if (positivas === 1) {
-    emoji.textContent = '😅';
-    title.textContent = 'Margen de error elevado';
-    text.innerHTML = `Solo <strong>${positivas} respuesta</strong> positiva. La ciencia es dura. Pero al menos respondiste, y eso ya cuenta como conversación.`;
+    emoji.textContent = '👌';
+    title.textContent = 'Mensaje captado';
+    text.innerHTML = `Gracias por contestar igualmente. No insisto y todo bien por aquí.`;
   } else {
-    emoji.textContent = '🥲';
-    title.textContent = 'El estudio sugiere replantear la pregunta';
-    text.innerHTML = `<strong>0 positivas</strong>. Mensaje recibido alto y claro. Gracias por tu honestidad — la respeto más que cualquier "tal vez" tibio.`;
+    emoji.textContent = '🙏';
+    title.textContent = 'Entendido';
+    text.innerHTML = `Sin rencores y con respeto. Gracias por la honestidad — eso vale más que cualquier "tal vez" tibio.`;
   }
 
   document.getElementById('rSummary').innerHTML = `
