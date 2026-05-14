@@ -97,9 +97,101 @@
     margin-top:12px;display:none;
   }
   .err.show{display:block}
+
+  /* ============ CAPA DE MAGIA ============ */
+  body{
+    background:linear-gradient(135deg,#fff1f2,#ffe4e6,#fecdd3,#fda4af,#fbcfe8);
+    background-size:400% 400%;
+    animation:gradientShift 18s ease infinite;
+  }
+  @keyframes gradientShift{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+  }
+  .card{position:relative;z-index:2;box-shadow:0 20px 60px -15px rgba(225,29,72,.25),0 0 0 1px rgba(255,255,255,.5)}
+
+  /* Corazones flotantes */
+  .floaters{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+  .floaters span{
+    position:absolute;bottom:-40px;
+    opacity:0;animation:floatUp linear infinite;
+    user-select:none;
+  }
+  @keyframes floatUp{
+    0%{transform:translateY(0) rotate(0);opacity:0}
+    10%{opacity:.6}
+    90%{opacity:.6}
+    100%{transform:translateY(-110vh) rotate(360deg);opacity:0}
+  }
+
+  /* Mejor entrada de pantalla */
+  @keyframes in{
+    from{opacity:0;transform:translateY(24px) scale(.96)}
+    to{opacity:1;transform:none}
+  }
+  .screen.active{animation:in .5s cubic-bezier(.34,1.56,.64,1)}
+
+  /* Emoji decorativo grande por pregunta */
+  .big-emoji{
+    font-size:56px;text-align:center;margin-bottom:6px;
+    animation:bounce 2.2s ease-in-out infinite;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.08));
+  }
+  @keyframes bounce{
+    0%,100%{transform:translateY(0) rotate(-3deg)}
+    50%{transform:translateY(-12px) rotate(3deg)}
+  }
+
+  /* Opciones más juguetonas */
+  .opt{transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+  .opt:hover{transform:translateX(4px);box-shadow:0 4px 12px rgba(225,29,72,.1)}
+  .opt.sel{animation:popSel .4s ease;box-shadow:0 6px 20px rgba(220,38,38,.2)}
+  @keyframes popSel{
+    0%{transform:scale(1)}
+    40%{transform:scale(1.04)}
+    100%{transform:scale(1)}
+  }
+
+  /* Botón con brillo */
+  .btn{position:relative;overflow:hidden}
+  .btn.alt{
+    background:linear-gradient(135deg,#ec4899,#dc2626);
+    box-shadow:0 6px 20px rgba(220,38,38,.35);
+  }
+  .btn.alt:hover:not(:disabled){
+    background:linear-gradient(135deg,#db2777,#b91c1c);
+    box-shadow:0 10px 30px rgba(220,38,38,.5);
+    transform:translateY(-2px) scale(1.02);
+  }
+  .btn:not(:disabled)::after{
+    content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+    transition:left .6s;
+  }
+  .btn:not(:disabled):hover::after{left:100%}
+
+  /* Progress más vivo */
+  .progress span.current{background:linear-gradient(90deg,#dc2626,#ec4899);animation:pulse 1.5s ease infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  /* Confetti */
+  .confetti{
+    position:fixed;width:10px;height:10px;
+    pointer-events:none;z-index:9999;top:-20px;
+    animation:fall 3s linear forwards;
+  }
+  @keyframes fall{
+    0%{transform:translateY(0) rotate(0);opacity:1}
+    100%{transform:translateY(105vh) rotate(720deg);opacity:0}
+  }
+
+  /* Resultado con más impacto */
+  .result-emoji{font-size:72px;animation:bounce 2s ease-in-out infinite}
 </style>
 </head>
 <body>
+
+<div class="floaters" id="floaters"></div>
 
 <div class="card">
   <div class="progress">
@@ -108,6 +200,7 @@
 
   <!-- BIENVENIDA -->
   <div class="screen active" data-step="0">
+    <div class="big-emoji">🌸</div>
     <div class="pretitle">Estudio independiente · 2026</div>
     <h1>Encuesta científica de carácter completamente neutral</h1>
     <p class="sub">Esto es técnicamente una encuesta. En la práctica… ya lo irás viendo. Sigue.</p>
@@ -117,6 +210,7 @@
 
   <!-- P1 -->
   <div class="screen" data-step="1">
+    <div class="big-emoji">💭</div>
     <div class="pretitle">Pregunta 1 de 4</div>
     <h2>Estado civil</h2>
     <div class="options" data-q="q1_estado_civil">
@@ -131,6 +225,7 @@
 
   <!-- P2 -->
   <div class="screen" data-step="2">
+    <div class="big-emoji">👀</div>
     <div class="pretitle">Pregunta 2 de 4</div>
     <h2>¿Tiene novio?</h2>
     <div class="options" data-q="q2_tiene_novio">
@@ -144,6 +239,7 @@
 
   <!-- P3 -->
   <div class="screen" data-step="3">
+    <div class="big-emoji">🌹</div>
     <div class="pretitle">Pregunta 3 de 4</div>
     <h2>Si alguien la invitara a salir… ¿aceptaría?</h2>
     <div class="options" data-q="q3_aceptaria_salir">
@@ -158,6 +254,7 @@
 
   <!-- P4 -->
   <div class="screen" data-step="4">
+    <div class="big-emoji">☕</div>
     <div class="pretitle">Pregunta 4 de 4</div>
     <h2>¿Aceptaría ir por un café o comer algo conmigo? ☕🍔</h2>
     <div class="options" data-q="q4_aceptaria_cafe">
@@ -198,6 +295,21 @@ let rowId = null;
 const respuestas = {};
 const screens = document.querySelectorAll('.screen');
 const progressDots = ['p1','p2','p3','p4'].map(id => document.getElementById(id));
+
+// Corazones flotantes de fondo
+(function generarFloaters(){
+  const box = document.getElementById('floaters');
+  const emojis = ['❤️','💕','🌸','💗','✨','🌹','💖'];
+  for(let i=0;i<18;i++){
+    const s=document.createElement('span');
+    s.textContent=emojis[i%emojis.length];
+    s.style.left=Math.random()*100+'%';
+    s.style.animationDuration=(9+Math.random()*10)+'s';
+    s.style.animationDelay=(Math.random()*12)+'s';
+    s.style.fontSize=(14+Math.random()*18)+'px';
+    box.appendChild(s);
+  }
+})();
 
 // Crear fila inicial al cargar
 (async () => {
@@ -289,10 +401,12 @@ function mostrarResultado() {
   const text = document.getElementById('rText');
 
   if (positivas >= 3) {
+    lanzarConfetti();
     emoji.textContent = '🌹';
     title.textContent = 'Hipótesis confirmada';
     text.innerHTML = `Con <strong>${positivas} de 4</strong> respuestas positivas, el comité declara oficialmente esto como <strong>una invitación a salir</strong>. La pelota está en tu cancha, Génesis. ☕`;
   } else if (positivas === 2) {
+    lanzarConfetti(40);
     emoji.textContent = '🤔';
     title.textContent = 'Resultados inconclusos';
     text.innerHTML = `<strong>${positivas} de 4</strong>. El estudio no es concluyente, pero tampoco lo descarta. Acepto el "tal vez" como un sí con trámite pendiente.`;
@@ -319,6 +433,23 @@ function mostrarError(msg) {
   e.textContent = msg;
   e.classList.add('show');
   setTimeout(() => e.classList.remove('show'), 4000);
+}
+
+function lanzarConfetti(cantidad = 100) {
+  const colors = ['#dc2626','#ec4899','#f59e0b','#10b981','#3b82f6','#a855f7','#f97316'];
+  for (let i = 0; i < cantidad; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = (Math.random() * 0.8) + 's';
+    c.style.animationDuration = (2.2 + Math.random() * 2.5) + 's';
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    if (Math.random() > 0.5) c.style.borderRadius = '50%';
+    if (Math.random() > 0.7) { c.style.width = '8px'; c.style.height = '14px'; }
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5500);
+  }
 }
 </script>
 
