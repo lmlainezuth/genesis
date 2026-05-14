@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encuesta científica · Para Génesis</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg:#fafaf9; --card:#ffffff;
+    --ink:#1c1917; --muted:#78716c;
+    --line:#e7e5e4; --accent:#dc2626;
+    --soft:#fef2f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:20px;line-height:1.5;
+  }
+  .card{
+    width:100%;max-width:500px;
+    background:var(--card);border:1px solid var(--line);
+    border-radius:20px;padding:32px 28px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .progress{
+    display:flex;gap:6px;margin-bottom:24px;
+  }
+  .progress span{
+    flex:1;height:4px;border-radius:99px;background:var(--line);
+    transition:background .4s;
+  }
+  .progress span.done{background:var(--accent)}
+  .progress span.current{background:var(--ink)}
+  .pretitle{
+    font-size:12px;color:var(--muted);letter-spacing:1px;
+    text-transform:uppercase;margin-bottom:8px;
+  }
+  h1{font-size:24px;line-height:1.3;margin-bottom:10px;font-weight:600}
+  h2{font-size:20px;line-height:1.35;margin-bottom:8px;font-weight:600}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:22px;font-style:italic}
+  .screen{display:none;animation:in .35s ease}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .options{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+  .opt{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;border:1.5px solid var(--line);
+    border-radius:12px;cursor:pointer;transition:all .15s;
+    font-size:15px;background:#fff;user-select:none;
+  }
+  .opt:hover{border-color:var(--ink)}
+  .opt input{display:none}
+  .dot{
+    width:18px;height:18px;border-radius:50%;
+    border:1.5px solid var(--line);flex-shrink:0;position:relative;
+    transition:all .15s;
+  }
+  .opt.sel{border-color:var(--accent);background:var(--soft)}
+  .opt.sel .dot{border-color:var(--accent);background:var(--accent)}
+  .opt.sel .dot::after{
+    content:"";position:absolute;inset:3px;
+    border-radius:50%;background:#fff;
+  }
+  .btn{
+    width:100%;padding:14px;border:none;border-radius:12px;
+    background:var(--ink);color:#fff;font-size:15px;font-weight:500;
+    cursor:pointer;transition:all .15s;
+  }
+  .btn:hover:not(:disabled){background:#000;transform:translateY(-1px)}
+  .btn:disabled{background:#d6d3d1;cursor:not-allowed}
+  .btn.alt{background:var(--accent)}
+  .btn.alt:hover:not(:disabled){background:#b91c1c}
+  .status{
+    text-align:center;font-size:12px;color:var(--muted);
+    margin-top:10px;min-height:16px;
+  }
+  .footnote{
+    font-size:11px;color:var(--muted);margin-top:20px;
+    text-align:center;font-style:italic;
+  }
+  .result-emoji{font-size:48px;text-align:center;margin-bottom:8px}
+  .result-text{font-size:16px;line-height:1.6;margin-bottom:18px}
+  .result-text strong{font-weight:600}
+  .summary{
+    background:var(--soft);border-radius:10px;padding:14px 16px;
+    font-size:13px;margin-bottom:18px;
+  }
+  .summary .row{display:flex;justify-content:space-between;padding:3px 0}
+  .summary .row span:first-child{color:var(--muted)}
+  .summary .row span:last-child{font-weight:500}
+  .err{
+    background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
+    padding:10px;border-radius:10px;font-size:13px;
+    margin-top:12px;display:none;
+  }
+  .err.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="progress">
+    <span id="p1"></span><span id="p2"></span><span id="p3"></span><span id="p4"></span>
+  </div>
+
+  <!-- BIENVENIDA -->
+  <div class="screen active" data-step="0">
+    <div class="pretitle">Estudio independiente · 2026</div>
+    <h1>Encuesta científica de carácter completamente neutral</h1>
+    <p class="sub">Esto es técnicamente una encuesta. En la práctica… ya lo irás viendo. Sigue.</p>
+    <button class="btn" onclick="next()">Empezar</button>
+    <div class="footnote">Tiempo estimado: menos de lo que tarda este chiste en envejecer.</div>
+  </div>
+
+  <!-- P1 -->
+  <div class="screen" data-step="1">
+    <div class="pretitle">Pregunta 1 de 4</div>
+    <h2>Estado civil</h2>
+    <div class="options" data-q="q1_estado_civil">
+      <label class="opt"><input type="radio" name="q1" value="Soltera"><span class="dot"></span>Soltera</label>
+      <label class="opt"><input type="radio" name="q1" value="En una relación"><span class="dot"></span>En una relación</label>
+      <label class="opt"><input type="radio" name="q1" value="Es complicado"><span class="dot"></span>Es complicado</label>
+      <label class="opt"><input type="radio" name="q1" value="Prefiero no decirlo"><span class="dot"></span>Prefiero no decirlo</label>
+    </div>
+    <button class="btn" id="b1" disabled onclick="next()">Siguiente</button>
+    <div class="status" id="s1"></div>
+  </div>
+
+  <!-- P2 -->
+  <div class="screen" data-step="2">
+    <div class="pretitle">Pregunta 2 de 4</div>
+    <h2>¿Tiene novio?</h2>
+    <div class="options" data-q="q2_tiene_novio">
+      <label class="opt"><input type="radio" name="q2" value="Sí"><span class="dot"></span>Sí</label>
+      <label class="opt"><input type="radio" name="q2" value="No"><span class="dot"></span>No</label>
+      <label class="opt"><input type="radio" name="q2" value="Quizás"><span class="dot"></span>Quizás 👀</label>
+    </div>
+    <button class="btn" id="b2" disabled onclick="next()">Siguiente</button>
+    <div class="status" id="s2"></div>
+  </div>
+
+  <!-- P3 -->
+  <div class="screen" data-step="3">
+    <div class="pretitle">Pregunta 3 de 4</div>
+    <h2>Si alguien la invitara a salir… ¿aceptaría?</h2>
+    <div class="options" data-q="q3_aceptaria_salir">
+      <label class="opt"><input type="radio" name="q3" value="Sí"><span class="dot"></span>Sí</label>
+      <label class="opt"><input type="radio" name="q3" value="Tal vez"><span class="dot"></span>Tal vez</label>
+      <label class="opt"><input type="radio" name="q3" value="Depende de quién"><span class="dot"></span>Depende de quién 😅</label>
+      <label class="opt"><input type="radio" name="q3" value="No"><span class="dot"></span>No</label>
+    </div>
+    <button class="btn" id="b3" disabled onclick="next()">Siguiente</button>
+    <div class="status" id="s3"></div>
+  </div>
+
+  <!-- P4 -->
+  <div class="screen" data-step="4">
+    <div class="pretitle">Pregunta 4 de 4</div>
+    <h2>¿Aceptaría ir por un café o comer algo conmigo? ☕🍔</h2>
+    <div class="options" data-q="q4_aceptaria_cafe">
+      <label class="opt"><input type="radio" name="q4" value="Sí"><span class="dot"></span>Sí</label>
+      <label class="opt"><input type="radio" name="q4" value="Suena bien"><span class="dot"></span>Suena bien</label>
+      <label class="opt"><input type="radio" name="q4" value="Tal vez"><span class="dot"></span>Tal vez</label>
+      <label class="opt"><input type="radio" name="q4" value="No"><span class="dot"></span>No</label>
+    </div>
+    <button class="btn alt" id="b4" disabled onclick="next()">Ver veredicto</button>
+    <div class="status" id="s4"></div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="screen" data-step="5">
+    <div class="result-emoji" id="rEmoji">📊</div>
+    <h2 style="text-align:center" id="rTitle">Resultados del estudio</h2>
+    <p class="sub" style="text-align:center">Procesados por un comité científico de una sola persona.</p>
+    <p class="result-text" id="rText"></p>
+    <div class="summary" id="rSummary"></div>
+    <button class="btn" onclick="location.reload()">Repetir el experimento</button>
+  </div>
+
+  <div class="err" id="err"></div>
+</div>
+
+<script>
+// ============================================
+// CONFIGURACIÓN — Rellena con tu Supabase
+// ============================================
+const SUPABASE_URL  = 'https://tuqrjktnaptfttqxzvzn.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_QZNrwjcdpTOoNzolU8MqOQ_EnO2fxr4';
+const TABLA = 'encuesta_genesis';
+// ============================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let step = 0;
+let rowId = null;
+const respuestas = {};
+const screens = document.querySelectorAll('.screen');
+const progressDots = ['p1','p2','p3','p4'].map(id => document.getElementById(id));
+
+// Crear fila inicial al cargar
+(async () => {
+  try {
+    const { data, error } = await sb
+      .from(TABLA)
+      .insert({})
+      .select('id')
+      .single();
+    if (error) throw error;
+    rowId = data.id;
+  } catch (e) {
+    mostrarError('No pude conectar con el servidor. Revisa tu conexión.');
+    console.error(e);
+  }
+})();
+
+// Marcar selección visual + habilitar botón
+document.querySelectorAll('.options').forEach(group => {
+  group.addEventListener('change', e => {
+    group.querySelectorAll('.opt').forEach(o => o.classList.remove('sel'));
+    e.target.closest('.opt').classList.add('sel');
+    const idx = step;
+    document.getElementById('b' + idx).disabled = false;
+  });
+});
+
+async function next() {
+  // En la bienvenida solo avanzamos
+  if (step === 0) { goTo(1); return; }
+  // En las preguntas: guardar y avanzar
+  if (step >= 1 && step <= 4) {
+    const groupEl = screens[step].querySelector('.options');
+    const col = groupEl.dataset.q;
+    const val = groupEl.querySelector('input:checked')?.value;
+    if (!val) return;
+    respuestas[col] = val;
+
+    const btn = document.getElementById('b' + step);
+    const stat = document.getElementById('s' + step);
+    btn.disabled = true;
+    stat.textContent = 'Guardando…';
+
+    try {
+      if (!rowId) throw new Error('Sin sesión');
+      const payload = { [col]: val, updated_at: new Date().toISOString() };
+      if (step === 4) payload.completada = true;
+      const { error } = await sb.from(TABLA).update(payload).eq('id', rowId);
+      if (error) throw error;
+      stat.textContent = '';
+      if (step === 4) mostrarResultado();
+      else goTo(step + 1);
+    } catch (e) {
+      btn.disabled = false;
+      stat.textContent = '';
+      mostrarError('No se pudo guardar. Inténtalo de nuevo.');
+      console.error(e);
+    }
+  }
+}
+
+function goTo(n) {
+  screens[step].classList.remove('active');
+  step = n;
+  screens[step].classList.add('active');
+  actualizarProgreso();
+}
+
+function actualizarProgreso() {
+  progressDots.forEach((dot, i) => {
+    dot.classList.remove('done', 'current');
+    if (step > i + 1 || step === 5) dot.classList.add('done');
+    else if (step === i + 1) dot.classList.add('current');
+  });
+}
+
+function mostrarResultado() {
+  goTo(5);
+  // Contar respuestas positivas
+  const positivas = [
+    ['Soltera'].includes(respuestas.q1_estado_civil),
+    ['No', 'Quizás'].includes(respuestas.q2_tiene_novio),
+    ['Sí', 'Tal vez', 'Depende de quién'].includes(respuestas.q3_aceptaria_salir),
+    ['Sí', 'Suena bien', 'Tal vez'].includes(respuestas.q4_aceptaria_cafe),
+  ].filter(Boolean).length;
+
+  const emoji = document.getElementById('rEmoji');
+  const title = document.getElementById('rTitle');
+  const text = document.getElementById('rText');
+
+  if (positivas >= 3) {
+    emoji.textContent = '🌹';
+    title.textContent = 'Hipótesis confirmada';
+    text.innerHTML = `Con <strong>${positivas} de 4</strong> respuestas positivas, el comité declara oficialmente esto como <strong>una invitación a salir</strong>. La pelota está en tu cancha, Génesis. ☕`;
+  } else if (positivas === 2) {
+    emoji.textContent = '🤔';
+    title.textContent = 'Resultados inconclusos';
+    text.innerHTML = `<strong>${positivas} de 4</strong>. El estudio no es concluyente, pero tampoco lo descarta. Acepto el "tal vez" como un sí con trámite pendiente.`;
+  } else if (positivas === 1) {
+    emoji.textContent = '😅';
+    title.textContent = 'Margen de error elevado';
+    text.innerHTML = `Solo <strong>${positivas} respuesta</strong> positiva. La ciencia es dura. Pero al menos respondiste, y eso ya cuenta como conversación.`;
+  } else {
+    emoji.textContent = '🥲';
+    title.textContent = 'El estudio sugiere replantear la pregunta';
+    text.innerHTML = `<strong>0 positivas</strong>. Mensaje recibido alto y claro. Gracias por tu honestidad — la respeto más que cualquier "tal vez" tibio.`;
+  }
+
+  document.getElementById('rSummary').innerHTML = `
+    <div class="row"><span>Estado civil</span><span>${respuestas.q1_estado_civil}</span></div>
+    <div class="row"><span>¿Novio?</span><span>${respuestas.q2_tiene_novio}</span></div>
+    <div class="row"><span>¿Saldría?</span><span>${respuestas.q3_aceptaria_salir}</span></div>
+    <div class="row"><span>¿Café conmigo?</span><span>${respuestas.q4_aceptaria_cafe}</span></div>
+  `;
+}
+
+function mostrarError(msg) {
+  const e = document.getElementById('err');
+  e.textContent = msg;
+  e.classList.add('show');
+  setTimeout(() => e.classList.remove('show'), 4000);
+}
+</script>
+
+</body>
+</html>
