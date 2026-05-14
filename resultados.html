@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados · Encuesta Génesis</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+    background:#0f172a;color:#e2e8f0;
+    min-height:100vh;padding:20px;line-height:1.5;
+  }
+  .container{max-width:900px;margin:0 auto}
+  h1{font-size:24px;margin-bottom:6px;color:#fff}
+  .subtitle{color:#94a3b8;margin-bottom:24px;font-size:14px}
+
+  /* Login */
+  .login{
+    max-width:380px;margin:80px auto;
+    background:#1e293b;border:1px solid #334155;
+    border-radius:14px;padding:28px;
+  }
+  .login h2{font-size:18px;margin-bottom:6px;color:#fff}
+  .login p{color:#94a3b8;font-size:13px;margin-bottom:18px}
+  .login input{
+    width:100%;padding:12px;border:1px solid #334155;
+    background:#0f172a;color:#fff;border-radius:8px;
+    font-size:14px;margin-bottom:12px;
+  }
+  .login input:focus{outline:none;border-color:#dc2626}
+  .login button{
+    width:100%;padding:12px;border:none;border-radius:8px;
+    background:#dc2626;color:#fff;font-size:14px;font-weight:600;
+    cursor:pointer;
+  }
+  .login button:hover{background:#b91c1c}
+  .login .err{color:#fca5a5;font-size:13px;margin-top:10px;min-height:18px}
+
+  /* Stats */
+  .stats{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:12px;margin-bottom:20px;
+  }
+  .stat{
+    background:#1e293b;border:1px solid #334155;
+    border-radius:10px;padding:14px 16px;
+  }
+  .stat .label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .stat .value{font-size:22px;font-weight:700;color:#fff;margin-top:4px}
+
+  /* Lista de intentos */
+  .intentos{display:flex;flex-direction:column;gap:12px}
+  .intento{
+    background:#1e293b;border:1px solid #334155;
+    border-radius:12px;padding:16px;
+    transition:border-color .2s;
+  }
+  .intento:hover{border-color:#475569}
+  .intento .head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;flex-wrap:wrap;gap:8px;
+  }
+  .fecha{font-size:13px;color:#94a3b8}
+  .badge{
+    font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;
+    text-transform:uppercase;letter-spacing:.5px;
+  }
+  .badge.pos{background:#14532d;color:#86efac}
+  .badge.neu{background:#422006;color:#fbbf24}
+  .badge.neg{background:#450a0a;color:#fca5a5}
+  .badge.inc{background:#334155;color:#cbd5e1}
+
+  .respuestas{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;font-size:13px;
+  }
+  .resp{
+    background:#0f172a;border-radius:8px;padding:10px 12px;
+  }
+  .resp .q{color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+  .resp .a{color:#fff;font-weight:500}
+  .resp .a.empty{color:#475569;font-style:italic;font-weight:400}
+
+  .empty{
+    text-align:center;padding:60px 20px;
+    color:#64748b;
+  }
+  .empty .icon{font-size:48px;margin-bottom:10px;opacity:.5}
+
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .btn-mini{
+    padding:6px 12px;font-size:12px;border:1px solid #334155;
+    background:transparent;color:#cbd5e1;border-radius:6px;
+    cursor:pointer;
+  }
+  .btn-mini:hover{background:#334155}
+  .btn-mini.danger{color:#fca5a5;border-color:#7f1d1d}
+  .btn-mini.danger:hover{background:#7f1d1d;color:#fff}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login" id="login">
+  <h2>🔒 Acceso restringido</h2>
+  <p>Esta página es solo para ver las respuestas. Ingrese la contraseña.</p>
+  <input type="password" id="pwd" placeholder="Contraseña" autofocus>
+  <button onclick="acceder()">Entrar</button>
+  <div class="err" id="errLogin"></div>
+</div>
+
+<!-- Contenido -->
+<div class="container" id="contenido" style="display:none">
+  <h1>📊 Respuestas de Génesis</h1>
+  <p class="subtitle" id="resumen">Cargando…</p>
+
+  <div class="stats" id="stats"></div>
+  <div class="intentos" id="intentos"></div>
+</div>
+
+<script>
+// ============================================
+const SUPABASE_URL  = 'https://tuqrjktnaptfttqxzvzn.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_QZNrwjcdpTOoNzolU8MqOQ_EnO2fxr4';
+const TABLA = 'encuesta_genesis';
+const PASSWORD = 'genesis2026';   // ← CAMBIE ESTA CONTRASEÑA
+// ============================================
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+function acceder() {
+  const v = document.getElementById('pwd').value;
+  if (v === PASSWORD) {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('contenido').style.display = 'block';
+    sessionStorage.setItem('gen_admin', '1');
+    cargar();
+  } else {
+    document.getElementById('errLogin').textContent = 'Contraseña incorrecta';
+  }
+}
+
+// Auto-login si ya entró en esta sesión
+if (sessionStorage.getItem('gen_admin') === '1') {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('contenido').style.display = 'block';
+  cargar();
+}
+
+document.getElementById('pwd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') acceder();
+});
+
+async function cargar() {
+  const { data, error } = await sb
+    .from(TABLA)
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('intentos').innerHTML =
+      `<div class="empty"><div class="icon">⚠️</div><div>Error: ${error.message}</div></div>`;
+    return;
+  }
+  if (!data || data.length === 0) {
+    document.getElementById('intentos').innerHTML =
+      `<div class="empty"><div class="icon">📭</div><div>No hay respuestas todavía.</div></div>`;
+    document.getElementById('resumen').textContent = 'Sin respuestas';
+    return;
+  }
+
+  renderStats(data);
+  renderLista(data);
+}
+
+function contarPositivas(r) {
+  let n = 0;
+  if (r.q1_estado_civil === 'Soltera') n++;
+  if (['No','Quizás'].includes(r.q2_tiene_novio)) n++;
+  if (['Sí','Tal vez','Depende de quién'].includes(r.q3_aceptaria_salir)) n++;
+  if (['Sí','Suena bien','Tal vez'].includes(r.q4_aceptaria_cafe)) n++;
+  return n;
+}
+
+function clasificacion(r) {
+  const completas = [r.q1_estado_civil, r.q2_tiene_novio, r.q3_aceptaria_salir, r.q4_aceptaria_cafe].filter(Boolean).length;
+  if (completas < 4) return { label: `Incompleto (${completas}/4)`, cls: 'inc' };
+  const pos = contarPositivas(r);
+  if (pos >= 3) return { label: `Positivo · ${pos}/4`, cls: 'pos' };
+  if (pos === 2) return { label: `Mixto · ${pos}/4`, cls: 'neu' };
+  return { label: `Negativo · ${pos}/4`, cls: 'neg' };
+}
+
+function renderStats(data) {
+  const total = data.length;
+  const completos = data.filter(r => r.completada).length;
+  const positivos = data.filter(r => r.completada && contarPositivas(r) >= 3).length;
+  const enPareja = data.filter(r =>
+    ['En una relación','Es complicado'].includes(r.q1_estado_civil) || r.q2_tiene_novio === 'Sí'
+  ).length;
+
+  document.getElementById('resumen').textContent =
+    `Total de intentos: ${total} · ${completos} completados`;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="label">Total intentos</div><div class="value">${total}</div></div>
+    <div class="stat"><div class="label">Completados</div><div class="value">${completos}</div></div>
+    <div class="stat"><div class="label">Positivos (3+)</div><div class="value">${positivos}</div></div>
+    <div class="stat"><div class="label">En pareja</div><div class="value">${enPareja}</div></div>
+  `;
+}
+
+function fmtFecha(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('es-ES', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+}
+
+function renderLista(data) {
+  const html = data.map(r => {
+    const c = clasificacion(r);
+    const cell = (label, val) => `
+      <div class="resp">
+        <div class="q">${label}</div>
+        <div class="a ${val ? '' : 'empty'}">${val || '— sin responder'}</div>
+      </div>`;
+    return `
+      <div class="intento">
+        <div class="head">
+          <span class="fecha">📅 ${fmtFecha(r.created_at)}</span>
+          <span class="badge ${c.cls}">${c.label}</span>
+        </div>
+        <div class="respuestas">
+          ${cell('Estado civil', r.q1_estado_civil)}
+          ${cell('¿Tiene novio?', r.q2_tiene_novio)}
+          ${cell('¿Saldría?', r.q3_aceptaria_salir)}
+          ${cell('¿Café conmigo?', r.q4_aceptaria_cafe)}
+        </div>
+        <div class="actions">
+          <button class="btn-mini danger" onclick="eliminar('${r.id}')">Eliminar</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('intentos').innerHTML = html;
+}
+
+async function eliminar(id) {
+  if (!confirm('¿Eliminar este intento? No se puede deshacer.')) return;
+  const { error } = await sb.from(TABLA).delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  cargar();
+}
+</script>
+
+</body>
+</html>

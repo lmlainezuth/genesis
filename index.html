@@ -276,6 +276,17 @@
     <button class="btn" onclick="location.reload()">Volver a empezar</button>
   </div>
 
+  <!-- CIERRE TEMPRANO (en pareja) -->
+  <div class="screen" data-step="6">
+    <div class="result-emoji">🙏</div>
+    <h2 style="text-align:center">Lo entiendo y la respeto</h2>
+    <p class="result-text" style="text-align:center">
+      Si está en pareja o no es el momento, lo respeto plenamente.
+      <br><br>
+      Le deseo lo mejor de corazón. Gracias por su tiempo y por su sinceridad.
+    </p>
+  </div>
+
   <div class="err" id="err"></div>
 </div>
 
@@ -359,6 +370,17 @@ async function next() {
       const { error } = await sb.from(TABLA).update(payload).eq('id', rowId);
       if (error) throw error;
       stat.textContent = '';
+
+      // Cortar si está en pareja
+      if (step === 1 && ['En una relación','Es complicado'].includes(val)) {
+        await sb.from(TABLA).update({ completada:true }).eq('id', rowId);
+        goTo(6); return;
+      }
+      if (step === 2 && val === 'Sí') {
+        await sb.from(TABLA).update({ completada:true }).eq('id', rowId);
+        goTo(6); return;
+      }
+
       if (step === 4) mostrarResultado();
       else goTo(step + 1);
     } catch (e) {
@@ -380,7 +402,7 @@ function goTo(n) {
 function actualizarProgreso() {
   progressDots.forEach((dot, i) => {
     dot.classList.remove('done', 'current');
-    if (step > i + 1 || step === 5) dot.classList.add('done');
+    if (step > i + 1 || step === 5 || step === 6) dot.classList.add('done');
     else if (step === i + 1) dot.classList.add('current');
   });
 }
